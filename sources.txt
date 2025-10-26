@@ -1,0 +1,5 @@
+Datos médicos Europeos | Datos ERC 
+https://ec.europa.eu/eurostat/databrowser/view/hlth_co_ren/default/table?lang=en
+Formatos disponibles .xml (Compresión .gzip) | Disponibilidad de acceso por API
+
+
