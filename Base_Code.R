@@ -7,3 +7,4 @@ datos_nef_codigos <- get_eurostat(search_eurostat("renal")[2], lang = "en", type
 str(datos_nef_valores)
 str(datos_nef_codigos)
 
+#prueba
