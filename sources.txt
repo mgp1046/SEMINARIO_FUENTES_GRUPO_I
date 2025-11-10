@@ -12,3 +12,5 @@ https://discodata.eea.europa.eu/#
 
 Formatos diponibles CSV, TSV, JSON, GeoJSON | Disponibilidad de API o Link???
 Hay que verificar la asignación de etiquetas y códigos a los valores, ubicados en la lituratura ¿¿¿Qué lituratura???
+
+
