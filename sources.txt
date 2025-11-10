@@ -5,6 +5,10 @@ Formatos disponibles .xml (Compresión .gzip) | Disponibilidad de acceso por API
 Datos Medioambiantales Europeos | Datos de calidad del aire, aguas, etc.
 https://discodata.eea.europa.eu/#
 
+ European Enviroment Agency Dataset
+  #He encontrado este dataset de 	"Drinking Water Directive" en el que se encuentra un apartado llamado ¨QualityInformation¨,dejo enlace:
+    https://dd.eionet.europa.eu/datasets/latest/WISE_DWD/tables/DWD_QI
+
 
 Formatos diponibles CSV, TSV, JSON, GeoJSON | Disponibilidad de API o Link???
 Hay que verificar la asignación de etiquetas y códigos a los valores, ubicados en la lituratura ¿¿¿Qué lituratura???
