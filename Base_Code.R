@@ -72,3 +72,21 @@ unique(agua_data_filtered$surfaceWaterBodyCategory)
 
 #Visualización de estructura
 str(agua_data_filtered)
+
+
+
+
+
+#COMPARACION DE PAISES ENTRE AMBAS BASES DE DATOS
+
+#Vemos que paises tenemos en cada base de datos
+agua_data_filtered$countryCode <- sapply(agua_data_filtered$..JSON, function(x) x$countryCode)
+unique(agua_data_filtered$countryCode)
+unique(datos_nef_valores$geo)
+
+paises_agua   <- unique(agua_data_filtered$countryCode)
+paises_nefro  <- unique(datos_nef_valores$geo)
+
+#Hacemos la interseccion para ver cuales son comunes
+paises_comunes <- intersect(paises_agua, paises_nefro)
+paises_comunes
