@@ -15,12 +15,19 @@ datos_nef_valores$freq <- NULL
 datos_nef_valores <- datos_nef_valores %>%
   rename(enfermedades = icd9cm)
 
+#Cambiamos el nombre a la columna TIME_PERIOD
+datos_nef_valores <- datos_nef_valores %>% 
+  rename(date = TIME_PERIOD)
+
 
 datos_nef_codigos <- get_eurostat(search_eurostat("renal")[2], lang = "en", type = "label")
 datos_nef_codigos$freq <- NULL
 
 datos_nef_codigos <- datos_nef_codigos %>%
   rename(enfermedades = icd9cm)
+
+datos_nef_codigos <- datos_nef_codigos %>% 
+  rename(date = TIME_PERIOD)
 
 #Visualización de estructura
 str(datos_nef_valores)
