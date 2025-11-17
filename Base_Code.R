@@ -59,5 +59,16 @@ str(agua_data_framed)
 agua_data_filtered <- agua_data_framed %>% select(., cYear, fileUrl, euRBDCode, rbdName, euSubUnitCode, surfaceWaterBodyName, cArea, 
                             surfaceWaterBodyCategory, reservoir, hasDescriptiveData, swEcologicalStatusOrPotentialValue, 
                             swChemicalStatusValue) %>% dplyr::rename(., "Area_(km2)" = cArea)
+
+
+#Vemos que tipos de cuerpos de agua hay
+#unique(agua_data_filtered$surfaceWaterBodyCategory)
+
+#Quitamos las masas de agua costera "CW" y de agua maritima territorial "TeW"
+agua_data_filtered <- agua_data_filtered %>%
+  filter(!surfaceWaterBodyCategory %in% c("CW", "TeW"))
+
+unique(agua_data_filtered$surfaceWaterBodyCategory)
+
 #Visualización de estructura
 str(agua_data_filtered)
