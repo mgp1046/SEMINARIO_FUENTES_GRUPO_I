@@ -11,8 +11,16 @@ datos_nef_valores <- get_eurostat(search_eurostat("renal")[2], lang = "en")
 #Eliminamos la columna freq, que solo tiene un nivel que se repite constantemente
 datos_nef_valores$freq <- NULL
 
+#Cambiamos el nombre a la columna icd9cm
+datos_nef_valores <- datos_nef_valores %>%
+  rename(enfermedades = icd9cm)
+
+
 datos_nef_codigos <- get_eurostat(search_eurostat("renal")[2], lang = "en", type = "label")
 datos_nef_codigos$freq <- NULL
+
+datos_nef_codigos <- datos_nef_codigos %>%
+  rename(enfermedades = icd9cm)
 
 #Visualización de estructura
 str(datos_nef_valores)
