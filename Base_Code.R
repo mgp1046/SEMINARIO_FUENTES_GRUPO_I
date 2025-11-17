@@ -22,6 +22,9 @@ datos_nef_valores <- datos_nef_valores %>%
 #Cambiamos formato de fecha
 datos_nef_valores$date <- format(as.Date(datos_nef_valores$date), "%Y")
 
+#Convertimos date a numeric
+datos_nef_valores$date <- as.numeric(datos_nef_valores$date)
+
 
 datos_nef_codigos <- get_eurostat(search_eurostat("renal")[2], lang = "en", type = "label")
 datos_nef_codigos$freq <- NULL
@@ -33,6 +36,9 @@ datos_nef_codigos <- datos_nef_codigos %>%
   rename(date = TIME_PERIOD)
 
 datos_nef_codigos$date <- format(as.Date(datos_nef_codigos$date), "%Y")
+
+datos_nef_codigos$date <- as.numeric(datos_nef_codigos$date)
+
 
 #Visualización de estructura
 str(datos_nef_valores)
