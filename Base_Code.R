@@ -49,48 +49,52 @@ str(datos_nef_codigos)
 
 
 #IMPORTACIÓN DE DATOS DE CALIDAD DEL AGUA
-agua_data <- fromJSON(file = "Data/DataExtract.json")
-
-agua_data_framed <- spread_all(agua_data)
 # Hay 288.711 registros para 26 atributos, claramente demasiados, filtramos
+agua_data <- fromJSON(file = "Data/DataExtract.json") %>% 
+  spread_all(.) %>%
+  select(., cYear, fileUrl, euRBDCode, rbdName, euSubUnitCode, surfaceWaterBodyName, cArea, surfaceWaterBodyCategory,
+         reservoir, hasDescriptiveData, swEcologicalStatusOrPotentialValue, swChemicalStatusValue) %>%
+  dplyr::rename(., "Area_(km2)" = cArea)
 
-str(agua_data_framed)
-
-agua_data_filtered <- agua_data_framed %>% select(., cYear, fileUrl, euRBDCode, rbdName, euSubUnitCode, surfaceWaterBodyName, cArea, 
-                            surfaceWaterBodyCategory, reservoir, hasDescriptiveData, swEcologicalStatusOrPotentialValue, 
-                            swChemicalStatusValue) %>% dplyr::rename(., "Area_(km2)" = cArea)
-
+str(agua_data)
 
 #Vemos que tipos de cuerpos de agua hay
 #unique(agua_data_filtered$surfaceWaterBodyCategory)
 
 #Quitamos las masas de agua costera "CW" y de agua maritima territorial "TeW"
-agua_data_filtered <- agua_data_filtered %>%
+agua_data <- agua_data %>%
   filter(!surfaceWaterBodyCategory %in% c("CW", "TeW"))
 
-unique(agua_data_filtered$surfaceWaterBodyCategory)
+unique(agua_data$surfaceWaterBodyCategory)
 
 #Visualización de estructura
-str(agua_data_filtered)
-colnames(agua_data_filtered)
+str(agua_data)
+colnames(agua_data)
 
 ?lapply
 # Comprobamos que no haya valores nulos o vacios en la columna del XML
-anyNA(agua_data_filtered$fileUrl)
+anyNA(agua_data$fileUrl)
 
 # Eliminamos los registros con valores nulos para el xml
 
-agua_data_filtered <- agua_data_filtered %>% filter(!is.na(.data[["fileUrl"]]) & .data[["fileUrl"]] != "")
+agua_data <- agua_data %>%
+  filter(!is.na(.data[["fileUrl"]]) & .data[["fileUrl"]] != "")
 
 # Creamos una función para leer los xml a partir de su url
 
 xml_search <- function (url){
   xml <- read_xml(url)
+  interes <- list(
+    campo1 = xml_text(xml_find_first(xml, "nombre_campo")),
+    campo2 =xml_text(xml_find_first(xml, "nombre_campo"))
+  )
   
-  return(xml)
+  rm(xml)
+  gc()
+  
+  return(interes)
 }
-
-agua_data_filtered$xml_data <- lapply(agua_data_filtered[["fileUrl"]], xml_search)
+agua_data$xml_data <- lapply(agua_data[["fileUrl"]], read_xml)
 
 colnames(agua_data_filtered)
 
