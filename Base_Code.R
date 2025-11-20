@@ -72,10 +72,27 @@ unique(agua_data_filtered$surfaceWaterBodyCategory)
 
 #Visualización de estructura
 str(agua_data_filtered)
+colnames(agua_data_filtered)
 
+?lapply
+# Comprobamos que no haya valores nulos o vacios en la columna del XML
+anyNA(agua_data_filtered$fileUrl)
 
+# Eliminamos los registros con valores nulos para el xml
 
+agua_data_filtered <- agua_data_filtered %>% filter(!is.na(.data[["fileUrl"]]) & .data[["fileUrl"]] != "")
 
+# Creamos una función para leer los xml a partir de su url
+
+xml_search <- function (url){
+  xml <- read_xml(url)
+  
+  return(xml)
+}
+
+agua_data_filtered$xml_data <- lapply(agua_data_filtered[["fileUrl"]], xml_search)
+
+colnames(agua_data_filtered)
 
 #COMPARACION DE PAISES ENTRE AMBAS BASES DE DATOS
 
