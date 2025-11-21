@@ -96,18 +96,19 @@ xml_search <- function (url){
 }
 agua_data$xml_data <- lapply(agua_data[["fileUrl"]], read_xml)
 
-colnames(agua_data_filtered)
+colnames(agua_data)
 
 #COMPARACION DE PAISES ENTRE AMBAS BASES DE DATOS
 
 #Vemos que paises tenemos en cada base de datos
-agua_data_filtered$countryCode <- sapply(agua_data_filtered$..JSON, function(x) x$countryCode)
-unique(agua_data_filtered$countryCode)
+agua_data$countryCode <- sapply(agua_data$..JSON, function(x) x$countryCode)
+unique(agua_data$countryCode)
 unique(datos_nef_valores$geo)
 
-paises_agua   <- unique(agua_data_filtered$countryCode)
+paises_agua   <- unique(agua_data$countryCode)
 paises_nefro  <- unique(datos_nef_valores$geo)
 
 #Hacemos la interseccion para ver cuales son comunes
 paises_comunes <- intersect(paises_agua, paises_nefro)
 paises_comunes
+
