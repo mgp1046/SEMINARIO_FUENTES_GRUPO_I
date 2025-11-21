@@ -76,27 +76,50 @@ colnames(agua_data)
 anyNA(agua_data$fileUrl)
 
 # Eliminamos los registros con valores nulos para el xml
-
 agua_data <- agua_data %>%
   filter(!is.na(.data[["fileUrl"]]) & .data[["fileUrl"]] != "")
 
-# Creamos una función para leer los xml a partir de su url
 
-xml_search <- function (url){
+# Leer el primer XML
+xml1 <- read_xml(agua_data$fileUrl[1])
+
+# Mostrar los nodos principales
+xml_find_all(xml1, ".//*")
+
+
+# Creamos una función para leer los xml a partir de su url
+xml_search <- function(url) {
   xml <- read_xml(url)
+  
   interes <- list(
-    campo1 = xml_text(xml_find_first(xml, "nombre_campo")),
-    campo2 =xml_text(xml_find_first(xml, "nombre_campo"))
+    #campo1 = xml_text(xml_find_first(xml, "nombre_campo")),
+    #campo2 =xml_text(xml_find_first(xml, "nombre_campo"))
+    countryCode = xml_text(xml_find_first(xml, ".//countryCode")),
+    euRBDCode = xml_text(xml_find_first(xml, ".//euRBDCode")),
+    surfaceWaterBodyName = xml_text(xml_find_first(xml, ".//surfaceWaterBodyName")),
+    surfaceWaterBodyCategory = xml_text(xml_find_first(xml, ".//surfaceWaterBodyCategory")),
+    # Concatenar múltiples presiones
+    significantPressures = paste(xml_text(xml_find_all(xml, ".//swSignificantPressureType")), collapse = "; "),
+    significantImpacts = paste(xml_text(xml_find_all(xml, ".//swSignificantImpactType")), collapse = "; "),
+    ecologicalStatus = as.numeric(xml_text(xml_find_first(xml, ".//swEcologicalStatusOrPotentialValue"))),
+    assessmentYear = as.numeric(xml_text(xml_find_first(xml, ".//swEcologicalAssessmentYear")))
   )
   
   rm(xml)
   gc()
   
-  return(interes)
+  return(datos)
 }
+
 agua_data$xml_data <- lapply(agua_data[["fileUrl"]], read_xml)
 
+#xml_data_lista <- lapply(agua_data$fileUrl, xml_search)
+#xml_data_df <- bind_rows(xml_data_lista)
+#agua_data <- bind_cols(agua_data,xml_data_df)
+
 colnames(agua_data)
+
+
 
 #COMPARACION DE PAISES ENTRE AMBAS BASES DE DATOS
 
