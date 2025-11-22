@@ -1,11 +1,6 @@
----
-title: "Calidad del agua y enfermedades renales en Europa"
-author: "Samuel Espiño Encinas, Lydia Ortiz Hernando, María García Paredes"
-date: "`r Sys.Date()`"
-output: html_document
----
-
 # Seminario: Agua y Enfermedades Renales
+
+---
 
 ## Autores
 - Samuel Espiño Encinas
