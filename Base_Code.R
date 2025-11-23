@@ -8,6 +8,8 @@ library(tidyjson)
 library(ggplot2)
 library(tidyr)
 library(jsonlite)
+library(furrr)
+library(future.apply)
 
 # IMPORTACIÓN DE DATOS DE NEFROLOGÍA --------------------
 
@@ -62,7 +64,7 @@ agua_data <- lapply(agua_data$features, function(feature){
     as.data.frame(pro, stringAsFactor = FALSE)
   }) %>%
   bind_rows(.) 
-agua_data <- select(agua_data, cYear, fileUrl, euRBDCode, rbdName, euSubUnitCode, surfaceWaterBodyName, cArea, surfaceWaterBodyCategory,
+agua_data <- select(agua_data, cYear, countryCode, fileUrl, euRBDCode, rbdName, euSubUnitCode, surfaceWaterBodyName, cArea, surfaceWaterBodyCategory,
          reservoir, hasDescriptiveData, swEcologicalStatusOrPotentialValue, swChemicalStatusValue) %>%
   dplyr::rename(., "Area_(km2)" = cArea) %>%
   filter(!surfaceWaterBodyCategory %in% c("CW", "TeW"))
@@ -103,25 +105,15 @@ xml_search <- function(url) {
   
   calidades <- xml_find_all(xml, ".//QualityElement")
   
-  interes <- list()
-  
-  for (campo in calidades){
-    
-    codigo <- xml_text(xml_find_first(campo, ".//qeCode"))
-    
-    
-    if (!is.na(codigo) && (codigo %in% target)){
-      valor <- xml_text(xml_find_first(campo, ".//qeStatusOrPotencialValue"))
-      
-      interes[[codigo]] <- valor
-    }
-  }
-  
-  interes[["Impactos"]] <- paste(xml_text(xml_find_all(xml, ".//swSignificantImpactType")), collapse = "; ")
-  interes[["Puntuacion_ecologica"]] <- as.numeric(xml_text(xml_find_first(xml, ".//swEcologicalStatusOrPotentialValue")))
-  interes[["Ano_revision"]] <- as.numeric(xml_text(xml_find_first(xml, ".//swEcologicalAssessmentYear")))
-  interes[["Puntuacion_quimica"]] <- as.numeric(xml_text(xml_find_first(xml, ".//swChemicalStatusValue")))
-  
+  interes <- list(
+    "Oxigeno" <- xml_text(xml_find_first(xml, ".//QualityElement[qeCode='QE3-1-3 - Oxygenation conditions']/qeStatusOrPotencialValue")),
+    "Nitrogeno" = xml_text(xml_find_first(xml, ".//QualityElement[qeCode='QE3-1-6-1 - Nitrogen conditions']/qeStatusOrPotencialValue")),
+    "Fosforo" = xml_text(xml_find_first(xml, ".//QualityElement[qeCode='QE3-1-6-2 - Phosphorus conditions']/qeStatusOrPotencialValue")),
+    "Impactos" <- paste(xml_text(xml_find_all(xml, ".//swSignificantImpactType")), collapse = "; "),
+    "Puntuacion_ecologica" <- as.numeric(xml_text(xml_find_first(xml, ".//swEcologicalStatusOrPotentialValue"))),
+    "Ano_revision" <- as.numeric(xml_text(xml_find_first(xml, ".//swEcologicalAssessmentYear"))),
+    "Puntuacion_quimica" <- as.numeric(xml_text(xml_find_first(xml, ".//swChemicalStatusValue")))
+  )
   
   rm(xml)
   rm(codigo)
@@ -131,13 +123,18 @@ xml_search <- function(url) {
   return(interes)
 }
 
-rm(xml1)
-gc()
+plan(multisession, workers = parallel::detectCores() -1)
 
-agua_data$xml_data <- lapply(agua_data$fileUrl, xml_search)
+agua_data$xml_data <- future_lapply(agua_data$fileUrl, xml_search)
 
 colnames(agua_data)
 
+# Guardamos el objeto de R para que en futuras ejecuciones no tarde tanto
+saveRDS(object = agua_data, file = "Data/Datos_calidad_agua.rds")
+
+# Carga de los datos SIN EJECUTAR TODO
+
+agua_data <- readRDS(file = "Data/Datos_calidad_agua.rds")
 
 
 #COMPARACION DE PAISES ENTRE AMBAS BASES DE DATOS
@@ -156,13 +153,14 @@ paises_comunes
 
 
 #Filtramos SOLO los países comunes
-agua_data <- agua_data %>% filter(countryCode %in% paises_comunes)
+agua_data <- agua_data %>% filter(countryCode %in% paises_comunes) 
+agua_data <- group_by(agua_data, "countryCode")
 datos_nef_valores <- datos_nef_valores %>% filter(geo %in% paises_comunes)
 str(datos_nef_valores)
+str(agua_data)
 
 # Unión 
-datos_combinados <- agua_data %>%
-  full_join(datos_nef_valores, 
+datos_combinados <- inner_join(agua_data, datos_nef_valores, 
             by = c("countryCode" = "geo"))
 
 str(datos_combinados)
