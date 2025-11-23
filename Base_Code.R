@@ -1,11 +1,14 @@
+# Importacion de las librerias necesarias ------------
+
 library(eurostat)
 library(xml2)
 library(rjson)
 library(dplyr)
 library(tidyjson)
 library(ggplot2)
+library(tidyr)
 
-#IMPORTACIÓN DE DATOS DE NEFROLOGÍA
+# IMPORTACIÓN DE DATOS DE NEFROLOGÍA --------------------
 
 datos_nef_valores <- get_eurostat(search_eurostat("renal")[2], lang = "en")
 
@@ -45,18 +48,19 @@ datos_nef_codigos$date <- as.numeric(datos_nef_codigos$date)
 str(datos_nef_valores)
 str(datos_nef_codigos)
 
-
-
-
-#IMPORTACIÓN DE DATOS DE CALIDAD DEL AGUA
+#IMPORTACIÓN DE DATOS DE CALIDAD DEL AGUA ----------------------
 # Hay 288.711 registros para 26 atributos, claramente demasiados, filtramos
-agua_data <- fromJSON(file = "Data/DataExtract.geojson") %>% 
-  spread_all(.) %>%
-  select(., cYear, fileUrl, euRBDCode, rbdName, euSubUnitCode, surfaceWaterBodyName, cArea, surfaceWaterBodyCategory,
-         reservoir, hasDescriptiveData, swEcologicalStatusOrPotentialValue, swChemicalStatusValue) %>%
-  dplyr::rename(., "Area_(km2)" = cArea)
+agua_data <- fromJSON("Data/DataExtract.geojson", simplifyVector = FALSE)
+  #spread_all(.) %>%
+  #select(., cYear, fileUrl, euRBDCode, rbdName, euSubUnitCode, surfaceWaterBodyName, cArea, surfaceWaterBodyCategory,
+  #       reservoir, hasDescriptiveData, swEcologicalStatusOrPotentialValue, swChemicalStatusValue) %>%
+  #dplyr::rename(., "Area_(km2)" = cArea)
 
-str(agua_data)
+propiedades <- bind_rows(propiedades)
+
+str(propiedades)
+
+str(agua_data$features[[1]]$geometry$coordinates)
 
 #Vemos que tipos de cuerpos de agua hay
 #unique(agua_data_filtered$surfaceWaterBodyCategory)
