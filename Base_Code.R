@@ -142,9 +142,9 @@ agua_data <- agua_data %>% filter(countryCode %in% paises_comunes)
 datos_nef_valores <- datos_nef_valores %>% filter(geo %in% paises_comunes)
 str(datos_nef_valores)
 
-# Unión usando left_join para que todas las filas de agua_data se conserven
+# Unión 
 datos_combinados <- agua_data %>%
-  left_join(datos_nef_valores, 
+  full_join(datos_nef_valores, 
             by = c("countryCode" = "geo"))
 
 str(datos_combinados)
@@ -171,11 +171,11 @@ nefro_resumen <- datos_nef_valores %>%
 
 #Unión final de los datos resumidos
 datos_combinados_final <- agua_resumen %>%
-  left_join(nefro_resumen, by = c("countryCode" = "geo"))
+  full_join(nefro_resumen, by = c("countryCode" = "geo"))
 str(datos_combinados_final)
+View(datos_combinados_final)
 
-
-#Casos renales vs estado ecológico del agua:
+#Casos renales vs estado ecológico del agua
 ggplot(datos_combinados_final, aes(x = swEcologicalStatus_promedio, y = total_casos_renales)) +
   geom_point(aes(size = Area_total, color = countryCode)) +
   labs(
@@ -186,7 +186,7 @@ ggplot(datos_combinados_final, aes(x = swEcologicalStatus_promedio, y = total_ca
   ) +
   theme_minimal()
 
-#Casos renales vs estado químico del agua:
+#Casos renales vs estado químico del agua
 ggplot(datos_combinados_final, aes(x = swChemicalStatus_promedio, y = total_casos_renales)) +
   geom_point(aes(size = Area_total, color = countryCode)) +
   labs(
