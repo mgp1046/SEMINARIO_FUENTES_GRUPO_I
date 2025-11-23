@@ -1,0 +1,145 @@
+---
+title: "SeminarioAguaYEnfemedadesRenales"
+author: "Samuel Espiño Encinas, Lydia Ortiz Hernando y María García Paredes"
+date: "2025-11-23"
+output: html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 4
+---
+<style>
+body {
+text-align: justify}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+* [Repositorio de GitHub](https://github.com/mgp1046/SEMINARIO_FUENTES_GRUPO_I.git)
+
+## **Introducción**
+
+Las enfermedades renales crónicas representan un problema de salud pública con un impacto creciente en Europa.  
+Al mismo tiempo, la calidad del agua puede verse afectada por diversos factores:
+
+- contaminación agrícola,  
+- vertidos urbanos e industriales,  
+- presiones difusas,  
+- sustancias peligrosas,  
+- degradación ecológica de los ríos y embalses.
+
+La combinación de ambos dominios —medio ambiente y salud— permite estudiar si existe algún tipo de relación que pueda ser relevante para la prevención y gestión sanitaria.
+
+
+
+## **Objetivos**
+
+
+El objetivo principal de este seminario es analizar la posible relación entre:
+
+- el **estado ecológico de las masas de agua superficiales** de Europa, y  
+- la **incidencia de enfermedades renales** registradas en distintos países europeos.
+
+Para ello combinamos información procedente de bases de datos ambientales y sanitarias oficiales de la Unión Europea. Nuestro propósito es detectar patrones, correlaciones y tendencias que ayuden a comprender si la calidad del agua podría tener algún impacto sobre la salud renal de la población.
+
+
+## **Metodología**
+
+
+Los datos utilizados en este seminario provienen de dos fuentes oficiales europeas. Por un lado, los datos médicos proceden de Eurostat, accesibles mediante API.
+
+Por otro lado, los datos medioambientales se han obtenido de la European Environment Agency (EEA) a través de su portal Data and Maps, donde pueden descargarse en formatos CSV, TSV, JSON y GeoJSON. 
+Estos archivos se encuentran organizados dentro de la carpeta Input/DATA del repositorio para su posterior tratamiento en R.
+
+Para poder utilizar estos conjuntos de datos y poder importarlos, utilizaremos las siguientes librerías:
+
+```{r , eval = TRUE,message=FALSE, warning=FALSE}
+library(eurostat)
+library(xml2)
+library(rjson)
+library(dplyr)
+library(tidyjson)
+library(ggplot2)
+library(tidyr)
+library(jsonlite)
+library(furrr)
+library(purrr)
+library(future.apply)
+
+```
+
+### **Importación archivos**
+
+Con todas las librerías cargadas ya podeos importar los datos.
+
+### Importación datos Eurostat:
+Importamos desde Eurostat un conjunto de datos oficiales sobre enfermedades renales, descargado automáticamente mediante su API. La función obtiene el dataset identificado como el segundo resultado relacionado con “renal” y lo carga en formato dataframe listo para analizar.
+
+```{r , eval = TRUE,message=FALSE}
+datos_nef_valores <- get_eurostat(search_eurostat("renal")[2], lang = "en")
+
+```
+### Preparación datos Eurostat
+Una vez obtenidos los datos y pudiendo ver su estructura, los modificaremos y ordenaremos de modo que sea más sencillo su manejo y comprensión.
+
+El objetivo de este bloque de datos es conseguir que los años (TIME_PERIOD), que de forma predeterminada vienen en una única columna (date), estén correctamente formateados como valores numéricos y se puedan utilizar como variable temporal. Además, se renombran las columnas para que tengan nombres claros (icd9cm a enfermedades) y se eliminan columnas innecesarias (freq). Todo esto permite tener un dataframe limpio y estructurado, con cada registro asociado a un país y a un año, listo para su análisis.
+
+```{r , eval = TRUE,message=FALSE}
+#Eliminamos la columna freq, que solo tiene un nivel que se repite constantemente
+datos_nef_valores$freq <- NULL
+
+#Cambiamos el nombre a la columna icd9cm
+datos_nef_valores <- datos_nef_valores %>%
+  rename(enfermedades = icd9cm)
+
+#Cambiamos el nombre a la columna TIME_PERIOD
+datos_nef_valores <- datos_nef_valores %>% 
+  rename(date = TIME_PERIOD)
+
+#Cambiamos formato de fecha
+datos_nef_valores$date <- format(as.Date(datos_nef_valores$date), "%Y")
+
+#Convertimos date a numeric
+datos_nef_valores$date <- as.numeric(datos_nef_valores$date)
+
+
+datos_nef_codigos <- get_eurostat(search_eurostat("renal")[2], lang = "en", type = "label")
+datos_nef_codigos$freq <- NULL
+
+datos_nef_codigos <- datos_nef_codigos %>%
+  rename(enfermedades = icd9cm)
+
+datos_nef_codigos <- datos_nef_codigos %>% 
+  rename(date = TIME_PERIOD)
+
+datos_nef_codigos$date <- format(as.Date(datos_nef_codigos$date), "%Y")
+
+datos_nef_codigos$date <- as.numeric(datos_nef_codigos$date)
+```
+
+### **Importación datos JSON:**
+
+Importamos los datos de calidad del agua desde un archivo GeoJSON y los convertimos en un dataframe limpio y manejable en R. Primero, se leen todas las features del archivo, y para cada una se extraen sus propiedades (properties). Se reemplazan los valores NULL por NA para evitar problemas en el análisis y se convierten las listas resultantes en dataframes individuales. Finalmente, todos estos dataframes se combinan en un único dataframe (agua_data) que contiene todos los registros y atributos de interés, listo para ser filtrado, renombrado y analizado.
+```{r , eval = TRUE,message=FALSE}
+agua_data <- jsonlite::fromJSON("Data/DataExtract.geojson", simplifyVector = FALSE)
+  
+
+agua_data <- lapply(agua_data$features, function(feature){
+    pro <- feature$properties
+    
+    pro <- lapply(pro, function(x) if (is.null(x)) NA else x)
+    
+    as.data.frame(pro, stringAsFactor = FALSE)
+  }) %>%
+  bind_rows(.) 
+```
+### Preparación archivos .json
+En este bloque se seleccionan únicamente las columnas que son relevantes para nuestro análisis de calidad del agua, eliminando información innecesaria. Posteriormente, se renombra la columna cArea como "Area_(km2)" para reflejar claramente que representa la superficie en kilómetros cuadrados. Finalmente, se filtran los registros eliminando las masas de agua costera ("CW") y las de agua marítima territorial ("TeW"), ya que no son tipos de agua potable, por lo que interfieren en nuestro análisis.
+```{r , eval = TRUE,message=FALSE}
+agua_data <- select(agua_data, cYear, countryCode, fileUrl, euRBDCode, rbdName, euSubUnitCode, surfaceWaterBodyName, cArea, surfaceWaterBodyCategory,
+         reservoir, hasDescriptiveData, swEcologicalStatusOrPotentialValue, swChemicalStatusValue) %>%
+  dplyr::rename(., "Area_(km2)" = cArea) %>%
+  filter(!surfaceWaterBodyCategory %in% c("CW", "TeW"))
+```
+
