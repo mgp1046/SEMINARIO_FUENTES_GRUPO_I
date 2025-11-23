@@ -7,6 +7,7 @@ library(dplyr)
 library(tidyjson)
 library(ggplot2)
 library(tidyr)
+library(jsonlite)
 
 # IMPORTACIÓN DE DATOS DE NEFROLOGÍA --------------------
 
@@ -50,9 +51,9 @@ str(datos_nef_codigos)
 
 #IMPORTACIÓN DE DATOS DE CALIDAD DEL AGUA ----------------------
 # Hay 288.711 registros para 26 atributos, claramente demasiados, filtramos
-agua_data <- fromJSON("Data/DataExtract.geojson", simplifyVector = FALSE)
+agua_data <- jsonlite::fromJSON("Data/DataExtract.geojson", simplifyVector = FALSE)
   
-  
+
 agua_data <- lapply(agua_data$features, function(feature){
     pro <- feature$properties
     
