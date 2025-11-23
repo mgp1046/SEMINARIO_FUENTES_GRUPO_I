@@ -51,23 +51,25 @@ str(datos_nef_codigos)
 #IMPORTACIÓN DE DATOS DE CALIDAD DEL AGUA ----------------------
 # Hay 288.711 registros para 26 atributos, claramente demasiados, filtramos
 agua_data <- fromJSON("Data/DataExtract.geojson", simplifyVector = FALSE)
-  #spread_all(.) %>%
-  #select(., cYear, fileUrl, euRBDCode, rbdName, euSubUnitCode, surfaceWaterBodyName, cArea, surfaceWaterBodyCategory,
-  #       reservoir, hasDescriptiveData, swEcologicalStatusOrPotentialValue, swChemicalStatusValue) %>%
-  #dplyr::rename(., "Area_(km2)" = cArea)
-
-propiedades <- bind_rows(propiedades)
-
-str(propiedades)
-
-str(agua_data$features[[1]]$geometry$coordinates)
+  
+  
+agua_data <- lapply(agua_data$features, function(feature){
+    pro <- feature$properties
+    
+    pro <- lapply(pro, function(x) if (is.null(x)) NA else x)
+    
+    as.data.frame(pro, stringAsFactor = FALSE)
+  }) %>%
+  bind_rows(.) 
+agua_data <- select(agua_data, cYear, fileUrl, euRBDCode, rbdName, euSubUnitCode, surfaceWaterBodyName, cArea, surfaceWaterBodyCategory,
+         reservoir, hasDescriptiveData, swEcologicalStatusOrPotentialValue, swChemicalStatusValue) %>%
+  dplyr::rename(., "Area_(km2)" = cArea) %>%
+  filter(!surfaceWaterBodyCategory %in% c("CW", "TeW"))
 
 #Vemos que tipos de cuerpos de agua hay
 #unique(agua_data_filtered$surfaceWaterBodyCategory)
 
 #Quitamos las masas de agua costera "CW" y de agua maritima territorial "TeW"
-agua_data <- agua_data %>%
-  filter(!surfaceWaterBodyCategory %in% c("CW", "TeW"))
 
 unique(agua_data$surfaceWaterBodyCategory)
 
@@ -95,16 +97,18 @@ xml_find_all(xml1, ".//*")
 # Creamos una función para leer los xml a partir de su url
 xml_search <- function(url) {
   target <- c("QE3-1-3 - Oxygenation conditions", "QE3-1-6-1 - Nitrogen conditions", "QE3-1-6-2 - Phosphorus Conditions")
+  
   xml <- read_xml(url)
   
-  calidades <- xml_find_all(xml, ".//QualityElement")
-  
+  calidades <- xml_find_all(xml, ".//countryCode")
   
   interes <- list()
   
-  
+  print(calidades)
   for (campo in calidades){
+    
     codigo <- xml_text(xml_find_first(campo, ".//qeCode"))
+    
     
     if (!is.na(codigo) && (codigo %in% target)){
       valor <- xml_text(xml_find_first(campo, ".//qeStatusOrPotencialValue"))
@@ -122,18 +126,15 @@ xml_search <- function(url) {
   rm(xml)
   rm(codigo)
   rm(valor)
-  rm(calidades)
   gc()
   
   return(interes)
 }
+
 rm(xml1)
 gc()
-agua_data$xml_data <- lapply(agua_data[["fileUrl"]], xml_search)
 
-#xml_data_lista <- lapply(agua_data$fileUrl, xml_search)
-#xml_data_df <- bind_rows(xml_data_lista)
-#agua_data <- bind_cols(agua_data,xml_data_df)
+agua_data$xml_data <- lapply(agua_data$fileUrl, xml_search)
 
 colnames(agua_data)
 
