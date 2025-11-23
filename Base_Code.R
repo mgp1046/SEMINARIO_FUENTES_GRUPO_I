@@ -112,7 +112,7 @@ xml_search <- function(url) {
     )
     }, error = function(){
     message("Error leyendo XML")
-    data-frame(Puntuacion_ecologica = NA, Impactos = NA, Puntuacion_quimica = NA)
+    data.frame(Puntuacion_ecologica = NA, Impactos = NA, Puntuacion_quimica = NA)
   })
 }
 
@@ -143,7 +143,7 @@ agua_data <- readRDS(file = "Data/Datos_calidad_agua.rds")
 #COMPARACION DE PAISES ENTRE AMBAS BASES DE DATOS -----------------------------
 
 #Vemos que paises tenemos en cada base de datos
-agua_data$countryCode <- sapply(agua_data$..JSON, function(x) x$countryCode)
+
 unique(agua_data$countryCode)
 unique(datos_nef_valores$geo)
 
@@ -222,5 +222,139 @@ ggplot(datos_combinados_final, aes(x = swChemicalStatus_promedio, y = total_caso
     color = "País"
   ) +
   theme_minimal()
+
+
+
+
+#MAPA INTERACTIVO-----------------
+install.packages(c("sf", "rnaturalearth", "rnaturalearthdata"), type = "binary")
+install.packages(c("units", "lwgeom"))
+install.packages("plotly")
+
+library(dplyr)
+library(sf)
+library(ggplot2)
+library(plotly)
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+
+
+# Cargar mapa europeo
+world <- ne_countries(scale = "medium", returnclass = "sf")
+eu <- world %>% filter(region_un == "Europe")
+
+# Asegurar columnas compatibles
+eu <- eu %>% rename(countryCode = iso_a2)
+
+# Unir mapa y los datos
+eu_join <- eu %>%
+  left_join(datos_combinados_final, by = "countryCode")
+
+# Obtener centroides para ubicar burbujas
+eu_join$centroid <- st_centroid(eu_join$geometry)
+coords <- st_coordinates(eu_join$centroid)
+
+eu_join$lon <- coords[,1]
+eu_join$lat <- coords[,2]
+
+# Tooltip
+eu_join <- eu_join %>%
+  mutate(mytext = paste(
+    "<b>", name, "</b><br>",
+    "Casos renales: ", total_casos_renales, "<br>",
+    "Estado ecológico: ", round(swEcologicalStatus_promedio,2), "<br>",
+    "Estado químico: ", round(swChemicalStatus_promedio,2), "<br>",
+    sep = ""
+  ))
+
+# Mapa estático
+p <- ggplot() +
+  geom_sf(data = eu_join, fill = "grey80", color = "white", alpha = 0.6) +
+  geom_point(
+    data = eu_join,
+    aes(
+      x = lon,
+      y = lat,
+      size = total_casos_renales,
+      color = swChemicalStatus_promedio,
+      text = mytext
+    ),
+    alpha = 0.9
+  ) +
+  scale_size_continuous(range = c(4, 20)) +
+  scale_color_viridis_c(option = "plasma", na.value = "lightgrey") +
+  theme_void() +
+  theme(legend.position = "right")
+
+# Convertir a interactivo
+p_interactivo <- ggplotly(p, tooltip = "text")
+
+p_interactivo
+
+
+
+
+
+#GRÁFICA:Dispersión con tendencia: calidad ecológica vs casos renales
+
+ggplot(datos_combinados_final, 
+       aes(x = swEcologicalStatus_promedio, 
+           y = total_casos_renales, 
+           label = countryCode)) +
+  geom_point(color = "royalblue", size = 3, alpha = 0.7) +
+  geom_smooth(method = "lm", se = TRUE, color = "darkred") +
+  geom_text(nudge_y = 500, size = 3, alpha = 0.6) +
+  labs(
+    title = "Relación entre estado ecológico del agua y casos renales",
+    x = "Estado ecológico promedio del agua",
+    y = "Casos renales totales"
+  ) +
+  theme_minimal()
+
+
+
+
+
+#GRÁFICA:Heatmap de correlaciones entre variables del agua y casos renales
+
+# Seleccionar solo las columnas numéricas relevantes
+datos_corr <- datos_combinados_final %>%
+  select(
+    swEcologicalStatus_promedio,
+    swChemicalStatus_promedio,
+    Area_total,
+    total_casos_renales
+  )
+
+# Calcular matriz de correlaciones
+matriz_corr <- round(cor(datos_corr, use = "pairwise.complete.obs"), 2)
+
+# Pasamos a formato largo
+matriz_corr_long <- as.data.frame(matriz_corr) %>%
+  mutate(Var1 = rownames(.)) %>%
+  pivot_longer(-Var1, names_to = "Var2", values_to = "Correlacion")
+
+# Heatmap
+ggplot(matriz_corr_long, aes(x = Var1, y = Var2, fill = Correlacion)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = Correlacion), color = "black", size = 5) +
+  scale_fill_viridis_c(option = "plasma", limits = c(-1,1)) +
+  theme_minimal(base_size = 13) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.title = element_blank(),
+    panel.grid = element_blank()
+  ) +
+  labs(
+    fill = "Correlación",
+    title = "Heatmap de correlaciones entre calidad del agua y casos renales"
+  )
+
+
+
+
+
+
 
 
