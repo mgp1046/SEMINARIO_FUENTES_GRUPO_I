@@ -101,11 +101,10 @@ xml_search <- function(url) {
   
   xml <- read_xml(url)
   
-  calidades <- xml_find_all(xml, ".//countryCode")
+  calidades <- xml_find_all(xml, ".//QualityElement")
   
   interes <- list()
   
-  print(calidades)
   for (campo in calidades){
     
     codigo <- xml_text(xml_find_first(campo, ".//qeCode"))
@@ -121,7 +120,7 @@ xml_search <- function(url) {
   interes[["Impactos"]] <- paste(xml_text(xml_find_all(xml, ".//swSignificantImpactType")), collapse = "; ")
   interes[["Puntuacion_ecologica"]] <- as.numeric(xml_text(xml_find_first(xml, ".//swEcologicalStatusOrPotentialValue")))
   interes[["Ano_revision"]] <- as.numeric(xml_text(xml_find_first(xml, ".//swEcologicalAssessmentYear")))
-  interes[["Puntuacion_quimica"]] <- as.numeric(xml_text(xml_find_first(".//swChemicalStatusValue")))
+  interes[["Puntuacion_quimica"]] <- as.numeric(xml_text(xml_find_first(xml, ".//swChemicalStatusValue")))
   
   
   rm(xml)
