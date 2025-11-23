@@ -48,10 +48,9 @@ str(datos_nef_codigos)
 
 
 
-
 #IMPORTACIÓN DE DATOS DE CALIDAD DEL AGUA
 # Hay 288.711 registros para 26 atributos, claramente demasiados, filtramos
-agua_data <- fromJSON(file = "Data/DataExtract.json") %>% 
+agua_data <- fromJSON(file = "Data/DataExtract.geojson") %>% 
   spread_all(.) %>%
   select(., cYear, fileUrl, euRBDCode, rbdName, euSubUnitCode, surfaceWaterBodyName, cArea, surfaceWaterBodyCategory,
          reservoir, hasDescriptiveData, swEcologicalStatusOrPotentialValue, swChemicalStatusValue) %>%
@@ -72,7 +71,6 @@ unique(agua_data$surfaceWaterBodyCategory)
 str(agua_data)
 colnames(agua_data)
 
-?lapply
 # Comprobamos que no haya valores nulos o vacios en la columna del XML
 anyNA(agua_data$fileUrl)
 
@@ -80,6 +78,8 @@ anyNA(agua_data$fileUrl)
 agua_data <- agua_data %>%
   filter(!is.na(.data[["fileUrl"]]) & .data[["fileUrl"]] != "")
 
+# Eliminamos espacio sin usar del entorno
+gc()
 
 # Leer el primer XML
 xml1 <- read_xml(agua_data$fileUrl[1])
@@ -90,29 +90,42 @@ xml_find_all(xml1, ".//*")
 
 # Creamos una función para leer los xml a partir de su url
 xml_search <- function(url) {
+  target <- c("QE3-1-3 - Oxygenation conditions", "QE3-1-6-1 - Nitrogen conditions", "QE3-1-6-2 - Phosphorus Conditions")
   xml <- read_xml(url)
   
-  interes <- list(
-    #campo1 = xml_text(xml_find_first(xml, "nombre_campo")),
-    #campo2 =xml_text(xml_find_first(xml, "nombre_campo"))
-    countryCode = xml_text(xml_find_first(xml, ".//countryCode")),
-    euRBDCode = xml_text(xml_find_first(xml, ".//euRBDCode")),
-    surfaceWaterBodyName = xml_text(xml_find_first(xml, ".//surfaceWaterBodyName")),
-    surfaceWaterBodyCategory = xml_text(xml_find_first(xml, ".//surfaceWaterBodyCategory")),
-    # Concatenar múltiples presiones
-    significantPressures = paste(xml_text(xml_find_all(xml, ".//swSignificantPressureType")), collapse = "; "),
-    significantImpacts = paste(xml_text(xml_find_all(xml, ".//swSignificantImpactType")), collapse = "; "),
-    ecologicalStatus = as.numeric(xml_text(xml_find_first(xml, ".//swEcologicalStatusOrPotentialValue"))),
-    assessmentYear = as.numeric(xml_text(xml_find_first(xml, ".//swEcologicalAssessmentYear")))
-  )
+  calidades <- xml_find_all(xml, ".//QualityElement")
+  
+  
+  interes <- list()
+  
+  
+  for (campo in calidades){
+    codigo <- xml_text(xml_find_first(campo, ".//qeCode"))
+    
+    if (!is.na(codigo) && (codigo %in% target)){
+      valor <- xml_text(xml_find_first(campo, ".//qeStatusOrPotencialValue"))
+      
+      interes[[codigo]] <- valor
+    }
+  }
+  
+  interes[["Impactos"]] <- paste(xml_text(xml_find_all(xml, ".//swSignificantImpactType")), collapse = "; ")
+  interes[["Puntuacion_ecologica"]] <- as.numeric(xml_text(xml_find_first(xml, ".//swEcologicalStatusOrPotentialValue")))
+  interes[["Ano_revision"]] <- as.numeric(xml_text(xml_find_first(xml, ".//swEcologicalAssessmentYear")))
+  interes[["Puntuacion_quimica"]] <- as.numeric(xml_text(xml_find_first(".//swChemicalStatusValue")))
+  
   
   rm(xml)
+  rm(codigo)
+  rm(valor)
+  rm(calidades)
   gc()
   
-  return(datos)
+  return(interes)
 }
-
-agua_data$xml_data <- lapply(agua_data[["fileUrl"]], read_xml)
+rm(xml1)
+gc()
+agua_data$xml_data <- lapply(agua_data[["fileUrl"]], xml_search)
 
 #xml_data_lista <- lapply(agua_data$fileUrl, xml_search)
 #xml_data_df <- bind_rows(xml_data_lista)
