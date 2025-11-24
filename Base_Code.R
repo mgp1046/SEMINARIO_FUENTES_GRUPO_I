@@ -209,6 +209,7 @@ View(datos_combinados_final)
 ggplot(datos_combinados_final, aes(x = swEcologicalStatus_promedio, y = total_casos_renales)) +
   geom_point(aes(size = Area_total, color = countryCode)) +
   geom_smooth(method = "lm", se = TRUE, color = "black") +
+  geom_smooth(method = "loess", se = TRUE, color = "red") +
   labs(
     x = "Estado ecológico promedio del agua",
     y = "Total de casos renales",
