@@ -49,7 +49,7 @@ Para ello combinamos información procedente de bases de datos ambientales y san
 Los datos utilizados en este seminario provienen de dos fuentes oficiales europeas. Por un lado, los datos médicos proceden de Eurostat, accesibles mediante API.
 
 Por otro lado, los datos medioambientales se han obtenido de la European Environment Agency (EEA) a través de su portal Data and Maps, donde pueden descargarse en formatos CSV, TSV, JSON y GeoJSON. 
-Estos archivos se encuentran organizados dentro de la carpeta Input/DATA del repositorio para su posterior tratamiento en R.
+Estos archivos se encuentran organizados dentro de la carpeta Data del repositorio para su posterior tratamiento en R.
 
 Para poder utilizar estos conjuntos de datos y poder importarlos, utilizaremos las siguientes librerías:
 
@@ -189,7 +189,6 @@ paises_comunes
 
 #Filtramos SOLO los países comunes
 agua_data <- agua_data %>% filter(countryCode %in% paises_comunes) 
-agua_data <- group_by(agua_data, countryCode)
 datos_nef_valores <- datos_nef_valores %>% filter(geo %in% paises_comunes)
 str(datos_nef_valores)
 str(agua_data)
