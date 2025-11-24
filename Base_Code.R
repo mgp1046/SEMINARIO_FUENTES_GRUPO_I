@@ -208,6 +208,7 @@ View(datos_combinados_final)
 #Casos renales vs estado ecológico del agua
 ggplot(datos_combinados_final, aes(x = swEcologicalStatus_promedio, y = total_casos_renales)) +
   geom_point(aes(size = Area_total, color = countryCode)) +
+  geom_smooth(method = "lm", se = TRUE, color = "black") +
   labs(
     x = "Estado ecológico promedio del agua",
     y = "Total de casos renales",
@@ -219,6 +220,9 @@ ggplot(datos_combinados_final, aes(x = swEcologicalStatus_promedio, y = total_ca
 #Casos renales vs estado químico del agua
 ggplot(datos_combinados_final, aes(x = swChemicalStatus_promedio, y = total_casos_renales)) +
   geom_point(aes(size = Area_total, color = countryCode)) +
+  geom_smooth(method = "lm", se = TRUE, color = "black") +
+  geom_smooth(method = "loess", se = TRUE, color = "red") +
+  
   labs(
     x = "Estado químico promedio del agua",
     y = "Total de casos renales",
