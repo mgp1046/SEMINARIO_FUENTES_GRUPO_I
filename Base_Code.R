@@ -11,6 +11,7 @@ library(jsonlite)
 library(furrr)
 library(purrr)
 library(future.apply)
+library(plotly)
 
 # IMPORTACIÓN DE DATOS DE NEFROLOGÍA --------------------
 
@@ -81,6 +82,8 @@ unique(agua_data$surfaceWaterBodyCategory)
 str(agua_data)
 colnames(agua_data)
 
+
+#DESDE AQUÍ, HASTA LÍNEA 136 NO ESTÁ EN RMD. DE LA 169 A 174 TAMPOCO
 # Comprobamos que no haya valores nulos o vacios en la columna del XML
 anyNA(agua_data$fileUrl)
 
@@ -162,12 +165,14 @@ datos_nef_valores <- datos_nef_valores %>% filter(geo %in% paises_comunes)
 str(datos_nef_valores)
 str(agua_data)
 
+
 agua_data <- mutate(agua_data, Puntuacion_ecologica = map_dbl(xml_data, ~ {
   valor <- .x[["Puntuacion_ecologica"]]
   if(is.null(valor) || length(valor) == 0) return(NA)
   as.numeric(valor)
 }),
 date = as.numeric(cYear))
+
 
 # Unión 
 datos_combinados <- right_join(agua_data, datos_nef_valores, 
@@ -202,90 +207,54 @@ str(datos_combinados_final)
 View(datos_combinados_final)
 
 #Casos renales vs estado ecológico del agua
-ggplot(datos_combinados_final, aes(x = swEcologicalStatus_promedio, y = total_casos_renales)) +
-  geom_point(aes(size = Area_total, color = countryCode)) +
-  labs(
-    x = "Estado ecológico promedio del agua",
-    y = "Total de casos renales",
-    size = "Área total (km2)",
-    color = "País"
-  ) +
-  theme_minimal()
+#ggplot(datos_combinados_final, aes(x = swEcologicalStatus_promedio, y = total_casos_renales)) +
+#  geom_point(aes(size = Area_total, color = countryCode)) +
+#  labs(
+#    x = "Estado ecológico promedio del agua",
+#    y = "Total de casos renales",
+#    size = "Área total (km2)",
+#    color = "País"
+#  ) +
+#  theme_minimal()
 
 #Casos renales vs estado químico del agua
-ggplot(datos_combinados_final, aes(x = swChemicalStatus_promedio, y = total_casos_renales)) +
-  geom_point(aes(size = Area_total, color = countryCode)) +
-  labs(
-    x = "Estado químico promedio del agua",
-    y = "Total de casos renales",
-    size = "Área total (km2)",
-    color = "País"
-  ) +
-  theme_minimal()
+#ggplot(datos_combinados_final, aes(x = swChemicalStatus_promedio, y = total_casos_renales)) +
+#  geom_point(aes(size = Area_total, color = countryCode)) +
+#  labs(
+#    x = "Estado químico promedio del agua",
+#    y = "Total de casos renales",
+#    size = "Área total (km2)",
+#    color = "País"
+# ) +
+#  theme_minimal()
 
 
 
+#GRÁFICO ESTADO QUÍMICO Y ECOLÓGICO VS CASOS RENALES. SIN MAPA
 
-#MAPA INTERACTIVO-----------------
-install.packages(c("sf", "rnaturalearth", "rnaturalearthdata"), type = "binary")
-install.packages(c("units", "lwgeom"))
-install.packages("plotly")
-
-library(dplyr)
-library(sf)
-library(ggplot2)
-library(plotly)
-library(rnaturalearth)
-library(rnaturalearthdata)
-
-
-
-# Cargar mapa europeo
-world <- ne_countries(scale = "medium", returnclass = "sf")
-eu <- world %>% filter(region_un == "Europe")
-
-# Asegurar columnas compatibles
-eu <- eu %>% rename(countryCode = iso_a2)
-
-# Unir mapa y los datos
-eu_join <- eu %>%
-  left_join(datos_combinados_final, by = "countryCode")
-
-# Obtener centroides para ubicar burbujas
-eu_join$centroid <- st_centroid(eu_join$geometry)
-coords <- st_coordinates(eu_join$centroid)
-
-eu_join$lon <- coords[,1]
-eu_join$lat <- coords[,2]
-
-# Tooltip
-eu_join <- eu_join %>%
-  mutate(mytext = paste(
-    "<b>", name, "</b><br>",
+# Crear el gráfico de burbujas
+p <- ggplot(datos_combinados_final, aes(
+  x = swChemicalStatus_promedio,       # eje x = estado químico
+  y = swEcologicalStatus_promedio,     # eje y = estado ecológico
+  size = total_casos_renales,          # tamaño = casos renales
+  color = swChemicalStatus_promedio,   # color opcional
+  text = paste(
+    "<b>", countryCode, "</b><br>",
     "Casos renales: ", total_casos_renales, "<br>",
     "Estado ecológico: ", round(swEcologicalStatus_promedio,2), "<br>",
-    "Estado químico: ", round(swChemicalStatus_promedio,2), "<br>",
-    sep = ""
-  ))
-
-# Mapa estático
-p <- ggplot() +
-  geom_sf(data = eu_join, fill = "grey80", color = "white", alpha = 0.6) +
-  geom_point(
-    data = eu_join,
-    aes(
-      x = lon,
-      y = lat,
-      size = total_casos_renales,
-      color = swChemicalStatus_promedio,
-      text = mytext
-    ),
-    alpha = 0.9
-  ) +
-  scale_size_continuous(range = c(4, 20)) +
+    "Estado químico: ", round(swChemicalStatus_promedio,2)
+  )
+)) +
+  geom_point(alpha = 0.8) +
+  scale_size_continuous(range = c(5, 25)) + # Ajusta según la magnitud de los datos
   scale_color_viridis_c(option = "plasma", na.value = "lightgrey") +
-  theme_void() +
-  theme(legend.position = "right")
+  theme_minimal() +
+  labs(
+    x = "Estado químico",
+    y = "Estado ecológico",
+    size = "Casos renales",
+    color = "Estado químico"
+  )
 
 # Convertir a interactivo
 p_interactivo <- ggplotly(p, tooltip = "text")
@@ -293,24 +262,71 @@ p_interactivo <- ggplotly(p, tooltip = "text")
 p_interactivo
 
 
-
-
-
-#GRÁFICA:Dispersión con tendencia: calidad ecológica vs casos renales
-
-ggplot(datos_combinados_final, 
-       aes(x = swEcologicalStatus_promedio, 
-           y = total_casos_renales, 
-           label = countryCode)) +
-  geom_point(color = "royalblue", size = 3, alpha = 0.7) +
-  geom_smooth(method = "lm", se = TRUE, color = "darkred") +
-  geom_text(nudge_y = 500, size = 3, alpha = 0.6) +
-  labs(
-    title = "Relación entre estado ecológico del agua y casos renales",
-    x = "Estado ecológico promedio del agua",
-    y = "Casos renales totales"
-  ) +
-  theme_minimal()
+# #MAPA INTERACTIVO-----------------
+# install.packages(c("sf", "rnaturalearth", "rnaturalearthdata"), type = "binary")
+# install.packages(c("units", "lwgeom"))
+# install.packages("plotly")
+# 
+# library(dplyr)
+# library(sf)
+# library(ggplot2)
+# library(plotly)
+# library(rnaturalearth)
+# library(rnaturalearthdata)
+# # 
+# 
+# 
+# # # Cargar mapa europeo
+# world <- ne_countries(scale = "medium", returnclass = "sf")
+# eu <- world %>% filter(region_un == "Europe")
+# 
+# # Asegurar columnas compatibles
+# eu <- eu %>% rename(countryCode = iso_a2)
+# 
+# # Unir mapa y los datos
+# eu_join <- eu %>%
+#   left_join(datos_combinados_final, by = "countryCode")
+# 
+# # Obtener centroides para ubicar burbujas
+# eu_join$centroid <- st_centroid(eu_join$geometry)
+# coords <- st_coordinates(eu_join$centroid)
+# 
+# eu_join$lon <- coords[,1]
+# eu_join$lat <- coords[,2]
+# 
+# # Tooltip
+# eu_join <- eu_join %>%
+#   mutate(mytext = paste(
+#     "<b>", name, "</b><br>",
+#     "Casos renales: ", total_casos_renales, "<br>",
+#     "Estado ecológico: ", round(swEcologicalStatus_promedio,2), "<br>",
+#     "Estado químico: ", round(swChemicalStatus_promedio,2), "<br>",
+#     sep = ""
+#   ))
+# 
+# # Mapa estático
+# p <- ggplot() +
+#   geom_sf(data = eu_join, fill = "grey80", color = "white", alpha = 0.6) +
+#   geom_point(
+#     data = eu_join,
+#     aes(
+#       x = lon,
+#       y = lat,
+#       size = total_casos_renales,
+#       color = swChemicalStatus_promedio,
+#       text = mytext
+#     ),
+#     alpha = 0.9
+#   ) +
+#   scale_size_continuous(range = c(4, 20)) +
+#   scale_color_viridis_c(option = "plasma", na.value = "lightgrey") +
+#   theme_void() +
+#   theme(legend.position = "right")
+# # 
+# # Convertir a interactivo
+# p_interactivo <- ggplotly(p, tooltip = "text")
+# 
+# p_interactivo
 
 
 
@@ -350,11 +366,6 @@ ggplot(matriz_corr_long, aes(x = Var1, y = Var2, fill = Correlacion)) +
     fill = "Correlación",
     title = "Heatmap de correlaciones entre calidad del agua y casos renales"
   )
-
-
-
-
-
 
 
 

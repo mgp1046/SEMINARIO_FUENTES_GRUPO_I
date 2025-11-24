@@ -117,6 +117,10 @@ datos_nef_codigos <- datos_nef_codigos %>%
 datos_nef_codigos$date <- format(as.Date(datos_nef_codigos$date), "%Y")
 
 datos_nef_codigos$date <- as.numeric(datos_nef_codigos$date)
+
+#Visualización de estructura
+str(datos_nef_valores)
+str(datos_nef_codigos)
 ```
 
 
@@ -144,5 +148,158 @@ agua_data <- select(agua_data, cYear, countryCode, fileUrl, euRBDCode, rbdName, 
          reservoir, hasDescriptiveData, swEcologicalStatusOrPotentialValue, swChemicalStatusValue) %>%
   dplyr::rename(., "Area_(km2)" = cArea) %>%
   filter(!surfaceWaterBodyCategory %in% c("CW", "TeW"))
+
+
+#Visualización de estructura
+str(agua_data)
+colnames(agua_data)
+```
+Además, debido a la gran carga de datos y el tiempo de ejecución que supone, lo guardamos exportamos para optimizar el código.
+
+```{r , eval = TRUE,message=FALSE}
+# Guardamos el objeto de R para que en futuras ejecuciones no tarde tanto
+saveRDS(object = agua_data, file = "Data/Datos_calidad_agua.rds")
+
+# Carga de los datos SIN EJECUTAR TODO
+
+agua_data <- readRDS(file = "Data/Datos_calidad_agua.rds")
 ```
 
+
+### **Inspección de datos**
+
+Realizamos diversas comprobaciones y uniones para ver qué datos geográficos podemos utilizar como punto de unión para el análisis, y así poder compararlos con los datos del agua.
+
+```{r , eval = TRUE,message=FALSE}
+
+#COMPARACION DE PAISES ENTRE AMBAS BASES DE DATOS 
+
+#Vemos que paises tenemos en cada base de datos
+
+unique(agua_data$countryCode)
+unique(datos_nef_valores$geo)
+
+paises_agua   <- unique(agua_data$countryCode)
+paises_nefro  <- unique(datos_nef_valores$geo)
+
+#Hacemos la interseccion para ver cuales son comunes
+paises_comunes <- intersect(paises_agua, paises_nefro)
+paises_comunes
+
+
+#Filtramos SOLO los países comunes
+agua_data <- agua_data %>% filter(countryCode %in% paises_comunes) 
+agua_data <- group_by(agua_data, countryCode)
+datos_nef_valores <- datos_nef_valores %>% filter(geo %in% paises_comunes)
+str(datos_nef_valores)
+str(agua_data)
+
+
+# Unión 
+datos_combinados <- right_join(agua_data, datos_nef_valores, 
+            by = c("countryCode" = "geo"))
+
+str(datos_combinados)
+
+#Resumen datos de agua por país
+agua_resumen <- agua_data %>%
+  group_by(countryCode) %>%
+  summarise(
+    Area_total = sum(`Area_(km2)`, na.rm = TRUE),
+    swEcologicalStatus_promedio = mean(
+      as.numeric(swEcologicalStatusOrPotentialValue[grepl("^[0-9]+$", swEcologicalStatusOrPotentialValue)]),
+      na.rm = TRUE
+    ),
+    swChemicalStatus_promedio = mean(
+      as.numeric(swChemicalStatusValue[grepl("^[0-9]+$", swChemicalStatusValue)]),
+      na.rm = TRUE
+    )
+  )
+
+#Resumen datos renales por país
+nefro_resumen <- datos_nef_valores %>%
+  group_by(geo) %>%
+  summarise(total_casos_renales = sum(values, na.rm = TRUE))
+
+#Unión final de los datos resumidos
+datos_combinados_final <- agua_resumen %>%
+  full_join(nefro_resumen, by = c("countryCode" = "geo"))
+str(datos_combinados_final)
+View(datos_combinados_final)
+```
+
+
+### **Estado químico y ecológico VS casos renales**
+
+```{r , eval = TRUE,message=FALSE}
+#GRÁFICO ESTADO QUÍMICO Y ECOLÓGICO VS CASOS RENALES.
+
+# Crear el gráfico de burbujas
+p <- ggplot(datos_combinados_final, aes(
+  x = swChemicalStatus_promedio,       # eje x = estado químico
+  y = swEcologicalStatus_promedio,     # eje y = estado ecológico
+  size = total_casos_renales,          # tamaño = casos renales
+  color = swChemicalStatus_promedio,   # color opcional
+  text = paste(
+    "<b>", countryCode, "</b><br>",
+    "Casos renales: ", total_casos_renales, "<br>",
+    "Estado ecológico: ", round(swEcologicalStatus_promedio,2), "<br>",
+    "Estado químico: ", round(swChemicalStatus_promedio,2)
+  )
+)) +
+  geom_point(alpha = 0.8) +
+  scale_size_continuous(range = c(5, 25)) + # Ajusta según la magnitud de los datos
+  scale_color_viridis_c(option = "plasma", na.value = "lightgrey") +
+  theme_minimal() +
+  labs(
+    x = "Estado químico",
+    y = "Estado ecológico",
+    size = "Casos renales",
+    color = "Estado químico"
+  )
+
+# Convertir a interactivo
+p_interactivo <- ggplotly(p, tooltip = "text")
+
+p_interactivo
+
+
+#GRÁFICA:Heatmap de correlaciones entre variables del agua y casos renales
+
+# Seleccionar solo las columnas numéricas relevantes
+datos_corr <- datos_combinados_final %>%
+  select(
+    swEcologicalStatus_promedio,
+    swChemicalStatus_promedio,
+    Area_total,
+    total_casos_renales
+  )
+
+# Calcular matriz de correlaciones
+matriz_corr <- round(cor(datos_corr, use = "pairwise.complete.obs"), 2)
+
+# Pasamos a formato largo
+matriz_corr_long <- as.data.frame(matriz_corr) %>%
+  mutate(Var1 = rownames(.)) %>%
+  pivot_longer(-Var1, names_to = "Var2", values_to = "Correlacion")
+
+# Heatmap
+ggplot(matriz_corr_long, aes(x = Var1, y = Var2, fill = Correlacion)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = Correlacion), color = "black", size = 5) +
+  scale_fill_viridis_c(option = "plasma", limits = c(-1,1)) +
+  theme_minimal(base_size = 13) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.title = element_blank(),
+    panel.grid = element_blank()
+  ) +
+  labs(
+    fill = "Correlación",
+    title = "Heatmap de correlaciones entre calidad del agua y casos renales"
+  )
+```
+
+
+### **Conclusiones**
+Tras el análisis detallado de los datos y la observación de las gráficas proporcionadas, se puede inferir que, en el contexto de los países europeos, la calidad del agua no parece tener un impacto significativo en la incidencia de enfermedades renales. Esto sugiere que otros factores, posiblemente relacionados con hábitos de vida, genética, atención médica o condiciones socioeconómicas, podrían desempeñar un papel más determinante en la aparición de estas patologías. Por lo tanto, aunque la calidad del agua sigue siendo un aspecto importante para la salud pública en general, en este caso específico no se observa una relación directa y significativa con los problemas renales.
