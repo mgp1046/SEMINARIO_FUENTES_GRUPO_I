@@ -2,7 +2,8 @@
 title: "SeminarioAguaYEnfemedadesRenales"
 author: "Samuel Espiño Encinas, Lydia Ortiz Hernando y María García Paredes"
 date: "2025-11-23"
-output: html_document:
+output: 
+  html_document:
     toc: true
     toc_float: true
     toc_depth: 4
@@ -57,14 +58,13 @@ library(eurostat)
 library(xml2)
 library(rjson)
 library(dplyr)
-library(tidyjson)
 library(ggplot2)
 library(tidyr)
 library(jsonlite)
 library(furrr)
 library(purrr)
 library(future.apply)
-
+library(plotly)
 ```
 
 
