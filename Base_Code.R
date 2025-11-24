@@ -160,22 +160,21 @@ paises_comunes
 
 #Filtramos SOLO los países comunes
 agua_data <- agua_data %>% filter(countryCode %in% paises_comunes) 
-agua_data <- group_by(agua_data, countryCode)
 datos_nef_valores <- datos_nef_valores %>% filter(geo %in% paises_comunes)
 str(datos_nef_valores)
 str(agua_data)
 
 
-agua_data <- mutate(agua_data, Puntuacion_ecologica = map_dbl(xml_data, ~ {
-  valor <- .x[["Puntuacion_ecologica"]]
-  if(is.null(valor) || length(valor) == 0) return(NA)
-  as.numeric(valor)
-}),
-date = as.numeric(cYear))
+# agua_data <- mutate(agua_data, Puntuacion_ecologica = map_dbl(xml_data, ~ {
+#   valor <- .x[["Puntuacion_ecologica"]]
+#   if(is.null(valor) || length(valor) == 0) return(NA)
+#   as.numeric(valor)
+# }),
+# date = as.numeric(cYear))
 
 
 # Unión 
-datos_combinados <- right_join(agua_data, datos_nef_valores, 
+datos_combinados <- left_join(agua_data, datos_nef_valores, 
             by = c("countryCode" = "geo"))
 
 str(datos_combinados)
@@ -207,26 +206,26 @@ str(datos_combinados_final)
 View(datos_combinados_final)
 
 #Casos renales vs estado ecológico del agua
-#ggplot(datos_combinados_final, aes(x = swEcologicalStatus_promedio, y = total_casos_renales)) +
-#  geom_point(aes(size = Area_total, color = countryCode)) +
-#  labs(
-#    x = "Estado ecológico promedio del agua",
-#    y = "Total de casos renales",
-#    size = "Área total (km2)",
-#    color = "País"
-#  ) +
-#  theme_minimal()
+ggplot(datos_combinados_final, aes(x = swEcologicalStatus_promedio, y = total_casos_renales)) +
+  geom_point(aes(size = Area_total, color = countryCode)) +
+  labs(
+    x = "Estado ecológico promedio del agua",
+    y = "Total de casos renales",
+    size = "Área total (km2)",
+    color = "País"
+  ) +
+  theme_minimal()
 
 #Casos renales vs estado químico del agua
-#ggplot(datos_combinados_final, aes(x = swChemicalStatus_promedio, y = total_casos_renales)) +
-#  geom_point(aes(size = Area_total, color = countryCode)) +
-#  labs(
-#    x = "Estado químico promedio del agua",
-#    y = "Total de casos renales",
-#    size = "Área total (km2)",
-#    color = "País"
-# ) +
-#  theme_minimal()
+ggplot(datos_combinados_final, aes(x = swChemicalStatus_promedio, y = total_casos_renales)) +
+  geom_point(aes(size = Area_total, color = countryCode)) +
+  labs(
+    x = "Estado químico promedio del agua",
+    y = "Total de casos renales",
+    size = "Área total (km2)",
+    color = "País"
+ ) +
+  theme_minimal()
 
 
 
