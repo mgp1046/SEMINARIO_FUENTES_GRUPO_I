@@ -262,6 +262,7 @@ View(datos_combinados_final)
 
 
 ### **Estado químico y ecológico del agua VS casos renales por país**
+
 Mediante el uso de diferentes visualizaciones, analizaremos cómo varían las características del agua en cada país y evaluaremos si dichos cambios pueden estar relacionados con un mayor riesgo de desarrollar enfermedades renales. A través de estas gráficas podremos observar patrones, tendencias y posibles asociaciones entre la calidad del agua y la incidencia de casos renales, lo que nos permitirá comprender mejor la influencia del entorno hídrico en la salud de la población.
 
 
@@ -284,10 +285,11 @@ ggplot(datos_combinados_final, aes(x = swEcologicalStatus_promedio, y = total_ca
 
 En este gráfico, la relación lineal entre el estado químico del agua y la tasa de casos renales por 100 mil habitantes es débil y ligeramente negativa. Esto indica que, en promedio, mejorar el estado químico del agua no se asocia de forma clara con una reducción de enfermedades renales, al menos no bajo un supuesto estrictamente lineal.
 
-La curva LOESS vuelve a mostrar una forma en U, más marcada que en el gráfico del estado ecológico: las tasas más bajas de casos renales aparecen en niveles intermedios del estado químico, mientras que los valores extremos (muy pobres o muy buenos) muestran incrementos en la enfermedad renal. Esta relación no lineal sugiere que los extremos del estado químico podrían estar capturando condiciones específicas de ciertos países, posibles factores no controlados en el análisis o por poca densidad de datos en los extremos del eje.
+La curva LOESS muestra una forma en U. Las tasas más bajas de casos renales aparecen en niveles intermedios del estado químico, mientras que los valores extremos (muy pobres o muy buenos) muestran incrementos en la enfermedad renal. Esta relación no lineal sugiere que los extremos del estado químico podrían estar capturando condiciones específicas de ciertos países, posibles factores no controlados en el análisis o por poca densidad de datos en los extremos del eje.
 
 
 ### Estado ecológico VS casos renales
+
 ```{r , eval = TRUE,message=FALSE}
 #Casos renales vs estado químico del agua
 ggplot(datos_combinados_final, aes(x = swChemicalStatus_promedio, y = total_casos_renales)) +
@@ -306,7 +308,8 @@ ggplot(datos_combinados_final, aes(x = swChemicalStatus_promedio, y = total_caso
 
 El gráfico muestra que no existe una relación lineal fuerte entre el estado ecológico del agua y la tasa de casos renales por 100 mil habitantes. La pendiente del ajuste lineal es ligeramente negativa, lo que sugiere una tendencia muy débil hacia menos casos cuando el estado ecológico mejora. Sin embargo, la variabilidad entre países sigue siendo grande y no se observa un patrón simple que explique los valores más altos de enfermedades renales.
 
-La curva LOESS revela una relación no lineal con forma de U, donde los valores intermedios del estado ecológico del agua (aprox. 2.4–2.6) se asocian con las tasas más bajas de casos renales, mientras que tanto los niveles muy bajos como los muy altos se relacionan con tasas mayores. Como en el caso anterior, puede deberse a diversas causas no relacionadas con el análisis principal.
+La curva LOESS revela una relación no lineal con forma de U también, donde los valores intermedios del estado ecológico del agua (aprox. 2.4–2.6) se asocian con las tasas más bajas de casos renales, mientras que tanto los niveles muy bajos como los muy altos se relacionan con tasas mayores. Como en el caso anterior, puede deberse a otras causas diversas no contempladas para este análisis.
+
 
 ### Estado ecológico y químico VS casos renales
 
@@ -342,7 +345,7 @@ p_interactivo <- ggplotly(p, tooltip = "text")
 p_interactivo
 ```
 
-En este caso podemos ver los datos analizados anteriormente con más precisión, pero de una forma más interactiva y visual para el análisis.
+En este caso podemos ver los datos analizados anteriormente con más precisión, pero de una forma más interactiva y visual para el análisis y su correcto entendimiento.
 
 ```{r , eval = TRUE,message=FALSE}
 #GRÁFICO ESTADO QUÍMICO Y ECOLÓGICO VS CASOS RENALES
