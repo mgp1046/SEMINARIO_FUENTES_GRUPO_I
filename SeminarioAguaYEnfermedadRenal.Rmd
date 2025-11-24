@@ -44,6 +44,31 @@ El objetivo principal de este seminario es analizar la posible relación entre:
 Para ello combinamos información procedente de bases de datos ambientales y sanitarias oficiales de la Unión Europea. Nuestro propósito es detectar patrones, correlaciones y tendencias que ayuden a comprender si la calidad del agua podría tener algún impacto sobre la salud renal de la población.
 
 
+## **Limitaciones del estudio**
+
+El presente análisis presenta diversas limitaciones que deben tenerse en cuenta al interpretar los resultados obtenidos:
+
+1. **Disponibilidad y heterogeneidad de los datos**  
+   Los datos procedentes de Eurostat y de la European Environment Agency (EEA) no siempre están armonizados en cuanto a años disponibles, unidades de medida o detalle territorial. Esto obliga a realizar filtrados y condensaciones que pueden reducir la precisión del análisis.
+
+2. **Falta de sincronía temporal**  
+   Los años de referencia para las enfermedades renales y para la calidad del agua no coinciden necesariamente entre países. Esta falta de alineación temporal dificulta el establecimiento de relaciones causales o de tendencias comparables.
+
+3. **Simplificación de indicadores ambientales**  
+   Los indicadores de calidad del agua empleados (estado químico y ecológico) representan resúmenes generales y no capturan la complejidad completa del ecosistema acuático ni la variabilidad espacial dentro de cada país. Además, algunos países presentan valores incompletos o categorizados de forma distinta.
+
+4. **Variables no consideradas**  
+   Las enfermedades renales pueden depender de factores socioeconómicos, genéticos, alimentarios o sanitarios que no se incluyen en este análisis. La ausencia de estas variables relevantes implica que las correlaciones observadas pueden estar influenciadas por elementos externos no medidos.
+
+5. **Interpretación limitada por la agregación de datos**  
+   Tanto los datos ambientales como los sanitarios se agregan a nivel nacional. Esto puede ocultar patrones regionales importantes y generar resultados demasiado generalizados para extraer conclusiones sólidas a nivel local.
+
+6. **Representatividad de las masas de agua**  
+   Los estados ecológico y químico provienen de masas de agua superficiales (ríos, lagos y embalses), pero estas no necesariamente corresponden a las fuentes principales de agua de consumo humano en cada país, lo cual limita la interpretación directa en términos de salud pública..
+
+En conjunto, estas limitaciones indican que los resultados deben interpretarse con cautela. El estudio permite explorar patrones generales, pero no establecer relaciones causales firmes entre calidad del agua y enfermedades renales sin un análisis más detallado y con datos más completos.
+
+
 ## **Metodología**
 
 Los datos utilizados en este seminario provienen de dos fuentes oficiales europeas. Por un lado, los datos médicos proceden de Eurostat, accesibles mediante API.
@@ -348,3 +373,31 @@ Finalmente, en este último gráfico podemos observar los valores de forma numé
 
 ### **Conclusiones**
 Tras el análisis detallado de los datos y la observación de las gráficas proporcionadas, se puede inferir que, en el contexto de los países europeos, la calidad del agua no parece tener un impacto significativo en la incidencia de enfermedades renales. Esto sugiere que otros factores, posiblemente relacionados con hábitos de vida, genética, atención médica o condiciones socioeconómicas, podrían desempeñar un papel más determinante en la aparición de estas patologías. Por lo tanto, aunque la calidad del agua sigue siendo un aspecto importante para la salud pública en general, en este caso específico no se observa una relación directa y significativa con los problemas renales.
+
+
+### **Referencias**
+
+- **European Environment Agency (EEA).** *Data and Maps.*  
+  Disponible en: https://www.eea.europa.eu/en/datahub
+
+- **Eurostat.** *Health Status – Disease Statistics.*  
+  Disponible en: https://ec.europa.eu/eurostat/web/health/data/database
+
+- **Eurostat API – Paquetes en R.**  
+  Documentación y acceso mediante el paquete **eurostat**:  
+  https://ropengov.github.io/eurostat/
+
+- **R Graph Gallery.** *Bubble map with ggplot2.*  
+  Disponible en: https://r-graph-gallery.com/330-bubble-map-with-ggplot2.html
+
+- **Paquete jsonlite.** *Reading and parsing JSON in R.*  
+  Documentación: https://cran.r-project.org/web/packages/jsonlite/vignettes/json-mapping.pdf
+
+- **Paquete ggplot2.** Wickham, H. (2016). *ggplot2: Elegant Graphics for Data Analysis.* Springer.  
+  Documentación: https://ggplot2.tidyverse.org/
+
+- **Paquete dplyr.** Wickham, H., et al. *dplyr: A Grammar of Data Manipulation.*  
+  Documentación: https://dplyr.tidyverse.org/
+
+- **Paquete plotly.**  
+  Documentación: https://plotly-r.com/
