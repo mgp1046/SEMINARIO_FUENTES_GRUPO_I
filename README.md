@@ -33,13 +33,6 @@ Al mismo tiempo, la calidad del agua puede verse afectada por diversos factores:
 
 La combinación de ambos dominios —medio ambiente y salud— permite estudiar si existe algún tipo de relación que pueda ser relevante para la prevención y gestión sanitaria.
 
---- 
-
-## 3. Resultados
-
----
-
-## 4. Conclusiones
 
 
 
